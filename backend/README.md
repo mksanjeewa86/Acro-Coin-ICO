@@ -17,9 +17,9 @@ OpenZeppelin has a contract library for ERC-20. Use this library when creating y
 ​
 This token should have:
 ​
-- 500,000 max total supply
-- A 2% tax on every transfer that gets put into a treasury account
-- A flag that toggles this tax on/off, controllable by owner, initialized to false
+- 500,000 max total supply                                                                                  🆗
+- A 2% tax on every transfer that gets put into a treasury account                                          🆗
+- A flag that toggles this tax on/off, controllable by owner, initialized to false                          🆗
 ​
 ## The ICO Contract
 ​
@@ -48,4 +48,3 @@ Shows error messages when user makes an invalid request (i.e. attempting to depo
 Do not worry about deploying your frontend. You can run it locally.
 ​
 You don't need to take care of design and details on frontend. It is the task to build smart contracts!
-Collapse
