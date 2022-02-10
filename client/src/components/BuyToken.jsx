@@ -10,7 +10,6 @@ const BuyToken = () => {
           onChange={handleTextChange}
           name="etherText"
           value={etherText}
-          placeholder="send ether to buy token"
           className="bg-gray-50 border border-gray-300 text-black-900 text-md rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 min-w-screen-md"
         />
       </div>

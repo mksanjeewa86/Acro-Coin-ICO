@@ -5,14 +5,13 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract AcroToken is ERC20 {
 
-  uint256 public _totalSupply = 500000;
+  uint256 public totalTokenSupply = 500000;
   address public admin;
 
     // constructor
     constructor () ERC20("AcroToken", "ACR") {
       admin = msg.sender;
-      _mint(msg.sender, _totalSupply);
-      emit Transfer(address(0), msg.sender, _totalSupply);
+      _mint(msg.sender, totalTokenSupply * 10 ** decimals());
     }
 
     function transferToken(address _recipient, uint256 _amount) public returns (bool) {

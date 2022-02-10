@@ -38,11 +38,11 @@ describe("Project", () => {
     });
     it("constructor creator address value", async () => {
       const creator = await project.totalSupply();
-      expect(creator).to.equal("500000");
+      expect(creator).to.equal(ethers.utils.parseEther("500000"));
     });
     it("constructor creator address value", async () => {
       const creator = await project.balanceOf(account1.address);
-      expect(creator).to.equal("500000");
+      expect(creator).to.equal(ethers.utils.parseEther("500000"));
     });
   });
 });

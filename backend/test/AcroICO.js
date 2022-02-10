@@ -28,13 +28,13 @@ describe("Project", () => {
     });
     describe("constructor", () => {
       it("constructor variables", async () => {
-        const goal = await project.goal();
+        const goal = await project.GOAL();
         expect(goal).to.equal(ethers.utils.parseEther("30000"));
         const phase = await project.phase();
         expect(phase).to.equal(0);
         const state = await project.state();
         expect(state).to.equal(0);
-        const rate = await project.rate();
+        const rate = await project.RATE();
         expect(rate).to.equal(5);
         const totalLimit = await project.maximumTotalPrivateContributionLimit();
         expect(totalLimit).to.equal(ethers.utils.parseEther("15000"));
@@ -42,9 +42,9 @@ describe("Project", () => {
         expect(individualLimit).to.equal(ethers.utils.parseEther("1500"));
         const totalContributions = await project.totalContributions();
         expect(totalContributions).to.equal(0);
-        const totalTaxes = await project._totalTaxes();
+        const totalTaxes = await project.totalTaxes();
         expect(totalTaxes).to.equal(0);
-        const isTaxable = await project._isTaxable();
+        const isTaxable = await project.isTaxable();
         expect(isTaxable).to.equal(true);
       });
     });
@@ -86,7 +86,7 @@ describe("Project", () => {
           currentTimestamp,
         ]);
         await expect(project.phaseForward()
-        ).to.emit(project, "phaseForwardEvent").withArgs("General phase", currentTimestamp);
+        ).to.emit(project, "PhaseForwardEvent").withArgs("General phase", currentTimestamp);
       });
       it("emit phase forward event in open phase", async () => {
         const currentTimestamp = Date.now();
@@ -95,7 +95,7 @@ describe("Project", () => {
         ]);
         await project.phaseForward();
         await expect(project.phaseForward()
-        ).to.emit(project, "phaseForwardEvent").withArgs("Open phase", currentTimestamp + 1);
+        ).to.emit(project, "PhaseForwardEvent").withArgs("Open phase", currentTimestamp + 1);
       });
     });
     describe("whitelist", () => {
@@ -108,55 +108,48 @@ describe("Project", () => {
       describe("in phase seed", () => {
         it("send ethers from whitelisted account", async () => {
           await project.WhitelistedCrowdsale([account2.address]);
-          await project.buyToken(account2.address, ethers.utils.parseEther("100"));
+          await project.connect(account2).buyToken({ value: ethers.utils.parseEther("100") });
           const contributions = await project.totalContributions();
           expect(contributions).to.equal(ethers.utils.parseEther("100"));
         });
         it("send ethers without whitelisted", async () => {
-          await expect(project.buyToken(account2.address, ethers.utils.parseEther("100"))
-          ).to.be.revertedWith("address is not whitelisted");
+          await expect(project.connect(account2).buyToken({ value: ethers.utils.parseEther("100") })
+          ).to.be.revertedWith("Not whitelisted");
         });
         it("exceed individual contribution limit", async () => {
           await project.WhitelistedCrowdsale([account2.address, account3.address]);
-          await project.buyToken(account2.address, ethers.utils.parseEther("1500"));
-          await expect(project.buyToken(account3.address, ethers.utils.parseEther("6000"))
-          ).to.be.revertedWith("exceed the individual limit");
+          await project.connect(account2).buyToken({ value: ethers.utils.parseEther("1500") });
+          await expect(project.connect(account3).buyToken({ value: ethers.utils.parseEther("6000") })
+          ).to.be.revertedWith("exceed individual limit");
         });
       });
       describe("in general phase", () => {
         it("send ethers without witelisted", async () => {
           await project.phaseForward();
-          await project.buyToken(account2.address, ethers.utils.parseEther("500"));
+          await project.connect(account2).buyToken({ value: ethers.utils.parseEther("500") });
           const contributions = await project.totalContributions();
           expect(contributions).to.equal(ethers.utils.parseEther("500"));
         });
         it("exceed indivudual limit", async () => {
           await project.phaseForward();
-          await expect(project.buyToken(account2.address, ethers.utils.parseEther("1500"))
-          ).to.be.revertedWith("exceed the individual limit");
+          await expect(project.connect(account2).buyToken({ value: ethers.utils.parseEther("1500") })
+          ).to.be.revertedWith("exceed individual limit");
         });
       });
       describe("in open phase", () => {
         it("send ethers without whitelisted", async () => {
           await project.phaseForward();
           await project.phaseForward();
-          await project.buyToken(account2.address, ethers.utils.parseEther("1500"));
+          await project.connect(account2).buyToken({ value: ethers.utils.parseEther("1500") });
           const contributions = await project.totalContributions();
           expect(contributions).to.equal(ethers.utils.parseEther("1500"));
         });
         it("send ethers and check the token balance", async () => {
           await project.phaseForward();
           await project.phaseForward();
-          await project.buyToken(account2.address, ethers.utils.parseEther("100"));
+          await project.connect(account2).buyToken({ value: ethers.utils.parseEther("100") });
           const tokens = await project.balanceOf(account2.address);
           expect(tokens).to.equal(490);
-        });
-        it("send ethers and check the token balance", async () => {
-          await project.phaseForward();
-          await project.phaseForward();
-          await project.buyToken(account2.address, ethers.utils.parseEther("150"));
-          const tokens = await project.balanceOf(account1.address);
-          expect(tokens).to.equal(499265);
         });
       });
     });
@@ -164,30 +157,32 @@ describe("Project", () => {
       describe("in seed phase", () => {
         it("send contribution from whitelisted inverstor", async () => {
           await project.WhitelistedCrowdsale([account2.address]);
-          await project.buyToken(account2.address, ethers.utils.parseEther("150"));
+          await project.connect(account2).buyToken({ value: ethers.utils.parseEther("150") });
           const contribution = await project.returnContributions(account2.address);
           expect(contribution).to.equal(ethers.utils.parseEther("150"));
         });
         it("send contribution from whitelisted inverstor and phase forward to general", async () => {
           await project.WhitelistedCrowdsale([account2.address]);
-          await project.buyToken(account2.address, ethers.utils.parseEther("150"));
+          await project.connect(account2).buyToken({ value: ethers.utils.parseEther("150") });
           await project.phaseForward();
           const contribution = await project.returnContributions(account2.address);
           expect(contribution).to.equal(ethers.utils.parseEther("150"));
         });
         it("send contribution from whitelisted inverstor and phase forward to open", async () => {
           await project.WhitelistedCrowdsale([account2.address]);
-          await project.buyToken(account2.address, ethers.utils.parseEther("150"));
+          await project.connect(account2).buyToken({ value: ethers.utils.parseEther("150") });
           await project.phaseForward();
           await project.phaseForward();
+          await project.connect(account2).withdrawTokens();
           const contribution = await project.returnContributions(account2.address);
           expect(contribution).to.equal(0);
         });
         it("send contribution from whitelisted inverstor and phase forward to open", async () => {
           await project.WhitelistedCrowdsale([account2.address]);
-          await project.buyToken(account2.address, ethers.utils.parseEther("150"));
+          await project.connect(account2).buyToken({ value: ethers.utils.parseEther("150") });
           await project.phaseForward();
           await project.phaseForward();
+          await project.connect(account2).withdrawTokens();
           const contribution = await project.balanceOf(account2.address);
           expect(contribution).to.equal(735);
         });
@@ -195,13 +190,13 @@ describe("Project", () => {
       describe("contribution in general phase", () => {
         it("send contribution and phase forward", async () => {
           await project.phaseForward();
-          await project.buyToken(account2.address, ethers.utils.parseEther("150"));
+          await project.connect(account2).buyToken({ value: ethers.utils.parseEther("150") });
           const contribution = await project.returnContributions(account2.address);
           expect(contribution).to.equal(ethers.utils.parseEther("150"));
         });
         it("send contribution and phase forward and check token balance", async () => {
           await project.phaseForward();
-          await project.buyToken(account2.address, ethers.utils.parseEther("150"));
+          await project.connect(account2).buyToken({ value: ethers.utils.parseEther("150") });
           const contribution = await project.returnContributions(account2.address);
           expect(contribution).to.equal(ethers.utils.parseEther("150"));
           const tokens = await project.balanceOf(account2.address);
@@ -212,7 +207,7 @@ describe("Project", () => {
         it("phase forward to open and send contributions", async () => {
           await project.phaseForward();
           await project.phaseForward();
-          await project.buyToken(account2.address, ethers.utils.parseEther("150"));
+          await project.connect(account2).buyToken({ value: ethers.utils.parseEther("150") });
           const contribution = await project.returnContributions(account2.address);
           expect(contribution).to.equal(0);
           const tokens = await project.balanceOf(account2.address);
@@ -223,9 +218,10 @@ describe("Project", () => {
     describe("tax", () => {
       it("calculate tax after contribution", async () => {
         await project.WhitelistedCrowdsale([account2.address]);
-        await project.buyToken(account2.address, ethers.utils.parseEther("100"));
+        await project.connect(account2).buyToken({ value: ethers.utils.parseEther("100") });
         await project.phaseForward();
         await project.phaseForward();
+        await project.connect(account2).withdrawTokens();
         const contribution = await project.returnTotalTaxes();
         expect(contribution).to.equal(ethers.utils.parseEther("2"));
       });
@@ -244,12 +240,12 @@ describe("Project", () => {
       });
       it("unpause the project without pause", async () => {
         await expect(project.unpause()
-        ).to.be.revertedWith("this project is not paused");
+        ).to.be.revertedWith("Not paused");
       });
       it("pause twice", async () => {
         await project.pause();
         await expect(project.pause()
-        ).to.be.revertedWith("this project is paused");
+        ).to.be.revertedWith("Already paused");
       });
       it("try to pause other than the owner", async () => {
         await expect(project.connect(account2).pause()
@@ -261,7 +257,7 @@ describe("Project", () => {
           currentTimestamp,
         ]);
         await expect(project.pause()
-        ).to.emit(project, "changeState").withArgs("paused", currentTimestamp);
+        ).to.emit(project, "ChangeState").withArgs("paused", currentTimestamp);
       });
       it("emit Unpause event", async () => {
         const currentTimestamp = Date.now();
@@ -270,7 +266,7 @@ describe("Project", () => {
         ]);
         await project.pause();
         await expect(project.unpause()
-        ).to.emit(project, "changeState").withArgs("active", currentTimestamp + 1);
+        ).to.emit(project, "ChangeState").withArgs("active", currentTimestamp + 1);
       });
     });
   });

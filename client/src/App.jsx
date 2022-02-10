@@ -5,6 +5,7 @@ import BuyToken from './components/BuyToken';
 import Pause from './components/Pause';
 import Balance from './components/Balance';
 import Whitelist from './components/Whitelist';
+import WithdrawToken from './components/WithdrawToken';
 
 function App() {
   return (
@@ -21,6 +22,8 @@ function App() {
         <Balance />
         <hr />
         <Whitelist />
+        <hr />
+        <WithdrawToken />
       </div>
     </div>
   )

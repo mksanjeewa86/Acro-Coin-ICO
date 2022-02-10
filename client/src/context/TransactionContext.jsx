@@ -11,7 +11,6 @@ const createEthereumContract = () => {
   return transactionsContract;
 };
 
-
 function filterErrorMessage(error) {
   const message = (Object.values(error))[2]["message"].split(":");
   const len = message.length;
@@ -30,6 +29,7 @@ export const TransactionsProvider = ({ children }) => {
   const [balanceAddress, setBalanceAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [whitelistText, setWhitelistText] = useState("");
+  const [withdrawError, setWithdrawError] = useState("");
   const handleTextChange = (e) => {
     if (e.target.name === "etherText") {
       setEtherText(e.target.value);
@@ -168,6 +168,7 @@ export const TransactionsProvider = ({ children }) => {
   };
   const clickAddToWhitelist = async () => {
     try {
+      setStateError("");
       const contract = createEthereumContract();
       await contract.WhitelistedCrowdsale([whitelistText]);
     } catch (error) {
@@ -176,12 +177,27 @@ export const TransactionsProvider = ({ children }) => {
       console.log("error from clickAddToWhitelist");
     }
   };
+  const clickWithdrawTokens = async () => {
+    try {
+      setWithdrawError("");
+      if (currentAccount !== "") {
+        const contract = createEthereumContract();
+        await contract.withdrawTokens();
+      } else {
+        alert("first connect to the wallet");
+      }
+    } catch (error) {
+      setWithdrawError(filterErrorMessage(error));
+      console.log(error);
+      console.log("error from clickWithdrawTokens");
+    }
+  };
   useEffect(() => {
     checkIfWalletIsConnect();
     checkCurrentPhase();
     accountChange();
     checkCurrentState();
-  }, [currentPhase, currentState]);
+  });
   return (
     <TransactionContext.Provider
       value={{
@@ -203,6 +219,8 @@ export const TransactionsProvider = ({ children }) => {
         isLoading,
         whitelistText,
         clickAddToWhitelist,
+        clickWithdrawTokens,
+        withdrawError,
       }}
     >
       {children}
