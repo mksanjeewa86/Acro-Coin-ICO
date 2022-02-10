@@ -192,6 +192,33 @@ describe("Project", () => {
           expect(contribution).to.equal(735);
         });
       });
+      describe("contribution in general phase", () => {
+        it("send contribution and phase forward", async () => {
+          await project.phaseForward();
+          await project.buyToken(account2.address, ethers.utils.parseEther("150"));
+          const contribution = await project.returnContributions(account2.address);
+          expect(contribution).to.equal(ethers.utils.parseEther("150"));
+        });
+        it("send contribution and phase forward and check token balance", async () => {
+          await project.phaseForward();
+          await project.buyToken(account2.address, ethers.utils.parseEther("150"));
+          const contribution = await project.returnContributions(account2.address);
+          expect(contribution).to.equal(ethers.utils.parseEther("150"));
+          const tokens = await project.balanceOf(account2.address);
+          expect(tokens).to.equal(0);
+        });
+      });
+      describe("contribution in open phase", () => {
+        it("phase forward to open and send contributions", async () => {
+          await project.phaseForward();
+          await project.phaseForward();
+          await project.buyToken(account2.address, ethers.utils.parseEther("150"));
+          const contribution = await project.returnContributions(account2.address);
+          expect(contribution).to.equal(0);
+          const tokens = await project.balanceOf(account2.address);
+          expect(tokens).to.equal(735);
+        });
+      });
     });
     describe("tax", () => {
       it("calculate tax after contribution", async () => {
