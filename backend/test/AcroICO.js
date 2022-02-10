@@ -193,6 +193,16 @@ describe("Project", () => {
         });
       });
     });
+    describe("tax", () => {
+      it("calculate tax after contribution", async () => {
+        await project.WhitelistedCrowdsale([account2.address]);
+        await project.buyToken(account2.address, ethers.utils.parseEther("100"));
+        await project.phaseForward();
+        await project.phaseForward();
+        const contribution = await project.returnTotalTaxes();
+        expect(contribution).to.equal(ethers.utils.parseEther("2"));
+      });
+    });
     describe("pausable", () => {
       it("pause the project", async () => {
         await project.pause();
