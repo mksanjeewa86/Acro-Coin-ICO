@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./AcroToken.sol";
 
-contract AcroICO is Ownable, AcroToken {
+contract AcroICO is AcroToken {
 
   enum State {
     Active,
@@ -33,6 +33,11 @@ contract AcroICO is Ownable, AcroToken {
     _;
   }
 
+  modifier onlyOwner {
+    require(msg.sender == admin, "Only owner can");
+    _;
+  }
+
   // events
   event ChangeState(string state, uint256 timestamp);
   event PhaseForwardEvent(string currentPhase, uint256 timestamp);
@@ -42,7 +47,6 @@ contract AcroICO is Ownable, AcroToken {
   mapping(address => uint256) public contributions;
   mapping (address => bool) public whitelist;
   mapping(address => uint256) public taxes;
-  address[] public addressIndex;
 
   // state variables
   uint256 public constant GOAL = 30000 ether;
@@ -54,9 +58,11 @@ contract AcroICO is Ownable, AcroToken {
   uint256 public totalContributions = 0;
   uint256 public totalTaxes = 0;
   bool public isTaxable = false;
+  address private admin;
 
   // constructor
   constructor(bool _isTaxable) AcroToken() {
+    admin = msg.sender;
     phase = Phase.Seed;
     state = State.Active;
     isTaxable = _isTaxable;
@@ -66,7 +72,7 @@ contract AcroICO is Ownable, AcroToken {
 
   // functions
   function phaseForward() external onlyOwner whenNotPaused {
-    require(phase != Phase.Open, "this project already in open phase");
+    require(phase != Phase.Open, "Already open");
     string memory currentPhase;
     if (phase == Phase.Seed) {
       phase = Phase.General;
@@ -91,17 +97,14 @@ contract AcroICO is Ownable, AcroToken {
     if (phase != Phase.Open) {
       require(contributions[msg.sender] + msg.value <= individualContributionLimit, "exceed individual limit");
       require(totalContributions + msg.value <= maximumTotalPrivateContributionLimit, "exceed total limit");
-      if (contributions[msg.sender] == 0) {
-        addressIndex.push(msg.sender);
-      }
-      contributions[msg.sender] = msg.value;
+      contributions[msg.sender] += msg.value;
     }
     if (phase == Phase.Open) {
       require(msg.value <= maximumTotalPrivateContributionLimit, "exceed total limit");
       uint256 value = calculateValueAfterTax(msg.value);
       uint256 tax = calculateTaxAmount(msg.value);
       totalTaxes += tax;
-      uint256 sendTokens = (value / 1 ether) * RATE;
+      uint256 sendTokens = value * RATE;
       approve(msg.sender, sendTokens);
       transferToken(msg.sender, sendTokens);
     }
@@ -112,7 +115,7 @@ contract AcroICO is Ownable, AcroToken {
   function withdrawTokens() external payable isPhaseOpen {
     require(contributions[msg.sender] > 0, "No contributions");
     uint256 value = calculateValueAfterTax(contributions[msg.sender]);
-    uint256 sendTokens = (value / 1 ether) * RATE;
+    uint256 sendTokens = value * RATE;
     approve(msg.sender, sendTokens);
     transferToken(msg.sender, sendTokens);
     uint256 tax = calculateTaxAmount(contributions[msg.sender]);
@@ -120,13 +123,13 @@ contract AcroICO is Ownable, AcroToken {
     contributions[msg.sender] = 0;
   }
 
-  function pause() public onlyOwner whenNotPaused returns (bool) {
+  function pause() external onlyOwner whenNotPaused returns (bool) {
     state = State.Paused;
     emit ChangeState("paused", block.timestamp);
     return true;
   }
 
-  function unpause() public onlyOwner whenPaused returns (bool) {
+  function unpause() external onlyOwner whenPaused returns (bool) {
     state = State.Active;
     emit ChangeState("active", block.timestamp);
     return true;
@@ -152,12 +155,10 @@ contract AcroICO is Ownable, AcroToken {
     return contributions[_owner];
   }
 
-  function WhitelistedCrowdsale(address[] memory _whiteList) public {
+  function whitelistedCrowdsale(address[] memory _whiteList) external onlyOwner {
     for (uint i = 0; i < _whiteList.length; i++) {
       whitelist[_whiteList[i]] = true;
-      addressIndex.push(_whiteList[i]);
       emit WhitelistOperations(_whiteList[i]);
-      contributions[_whiteList[i]] = 0;
     }
   }
 

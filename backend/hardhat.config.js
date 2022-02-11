@@ -28,7 +28,7 @@ module.exports = {
     // rinkeby: {
     //   url: "https://eth-rinkeby.alchemyapi.io/v2/bMWIXQAHvUbuu3W7MRvqFd5u0wlZZW-s",
     //   accounts: ["0x5cdcd7e0b2f391b64a2da79a35aa4071e3cccb590a680e6a08f7718b9cb35c2c"],
-    // }
+    // },
   },
   etherscan: {
     apiKey: "4EB6NXPZFGQIKP2DKNTGMWD2J793IHEXIF"

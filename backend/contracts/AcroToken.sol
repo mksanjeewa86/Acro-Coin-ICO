@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract AcroToken is ERC20 {
 
   uint256 public totalTokenSupply = 500000;
-  address public admin;
+  address private admin;
 
     // constructor
     constructor () ERC20("AcroToken", "ACR") {

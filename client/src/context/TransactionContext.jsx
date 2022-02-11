@@ -29,6 +29,7 @@ export const TransactionsProvider = ({ children }) => {
   const [balanceAddress, setBalanceAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [whitelistText, setWhitelistText] = useState("");
+  const [whitelistError, setWhitelistError] = useState("");
   const [withdrawError, setWithdrawError] = useState("");
   const handleTextChange = (e) => {
     if (e.target.name === "etherText") {
@@ -116,7 +117,10 @@ export const TransactionsProvider = ({ children }) => {
   const clickPhaseForward = async () => {
     try {
       const contract = createEthereumContract();
-      await contract.phaseForward();
+      const res = await contract.phaseForward();
+      setIsLoading(true);
+      await res.wait();
+      setIsLoading(false);
       const phase = await contract.phase();
       setCurrentPhase(phase);
     } catch (error) {
@@ -129,10 +133,10 @@ export const TransactionsProvider = ({ children }) => {
     try {
       const contract = createEthereumContract();
       const res = await contract.balanceOf(balanceAddress);
-      console.log(res);
-      setBalance(parseInt(res._hex));
+      console.log(ethers.utils.formatEther(res._hex));
+      setBalance(ethers.utils.formatEther(res._hex).split(".")[0]);
     } catch (error) {
-      // setBuyTokenError((Object.values(error))[2]["message"]);
+      setBuyTokenError((Object.values(error))[2]["message"]);
       console.log(error);
       console.log("error from checkBalance");
     }
@@ -141,10 +145,14 @@ export const TransactionsProvider = ({ children }) => {
     try {
       setBuyTokenError("");
       const contract = createEthereumContract();
-      const res = await contract.buyToken(currentAccount, ethers.utils.parseEther(etherText));
-      console.log(res);
+      const res = await contract.buyToken({
+        value: ethers.utils.parseEther(etherText).toHexString()
+      });
+      setIsLoading(true);
+      await res.wait();
+      setIsLoading(false);
     } catch (error) {
-      setBuyTokenError(filterErrorMessage(error));
+      // setBuyTokenError(filterErrorMessage(error));
       console.log(error);
       console.log("error from clickPayWithEth");
     }
@@ -170,9 +178,12 @@ export const TransactionsProvider = ({ children }) => {
     try {
       setStateError("");
       const contract = createEthereumContract();
-      await contract.WhitelistedCrowdsale([whitelistText]);
+      const res = await contract.whitelistedCrowdsale([whitelistText]);
+      setIsLoading(true);
+      await res.wait();
+      setIsLoading(false);
     } catch (error) {
-      setStateError(filterErrorMessage(error));
+      setWhitelistError(filterErrorMessage(error));
       console.log(error);
       console.log("error from clickAddToWhitelist");
     }
@@ -218,6 +229,7 @@ export const TransactionsProvider = ({ children }) => {
         balanceAddress,
         isLoading,
         whitelistText,
+        whitelistError,
         clickAddToWhitelist,
         clickWithdrawTokens,
         withdrawError,

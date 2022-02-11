@@ -3,10 +3,11 @@ const { ethers } = require("hardhat");
 
 const main = async () => {
   const [deployer] = await ethers.getSigners();
-  const transactionsFactory = await hre.ethers.getContractFactory("AcroICO");
+  const transactionsFactory = await hre.ethers.getContractFactory("AcroICO", deployer);
   const transactionsContract = await transactionsFactory.deploy(true);
   await transactionsContract.deployed();
   console.log("AcroICO address: ", transactionsContract.address);
+  console.log("deployer address: ", deployer.address);
 };
 
 const runMain = async () => {
@@ -20,3 +21,4 @@ const runMain = async () => {
 };
 
 runMain();
+//npx hardhat run scripts/deploy.js --network ropsten
